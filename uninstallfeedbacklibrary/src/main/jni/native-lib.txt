@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <jni.h>
+#include <malloc.h>
+#include <string.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/inotify.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <android/log.h>
+#include<sys/file.h>
+#define LOG_TAG "System.out.c"
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+static const char APP_DIR[] = "/data/data/com.david.a360unistall";
+static const char observerFile[] = "/data/data/com.david.a360unistall/observedFile";
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_david_a360unistall_MainActivity_init(JNIEnv *env, jobject instance,jint sdkVersion ) {
+    //创建一个进程  多个返回值
+    pid_t pid=fork();
+//         下面的代码会执行两遍
+    if (pid < 0) {
+//   小于0   代表 生成进程失败
+        LOGD("进程失败");
+    } else if (pid > 0) {
+//        运行在app进程
+    } else {
+//        =0     运行在子进程
+        int observer = open(observerFile, O_RDONLY);
+        if (observer == -1) {
+//            创建 文件  observedFile    线程  1   2 轮询  observerFile
+            observer = open(observerFile, O_CREAT);
+        }
+//        线程  1   2   隔 1-3 秒  轮询  observerFile  可以  性能低
+
+        //inotify  linux  可以监听文件的状态
+        int fileDescriple=inotify_init();
+//        监听文件
+        int watch=inotify_add_watch(fileDescriple, observerFile, IN_ALL_EVENTS);
+        if (watch < 0) {
+            exit(0);
+        }
+        void *p_buf=malloc(sizeof(struct inotify_event));
+//    阻塞式函数
+        size_t  readBytes=read(fileDescriple,p_buf, sizeof(struct inotify_event));
+//    observerFile   被删除了
+        if (((struct inotify_event *) p_buf)->mask == IN_DELETE_SELF) {
+        // 考虑覆盖安装的问题
+            FILE *app_file = fopen(APP_DIR, "r");
+            if (app_file == NULL) {
+//                真正卸载
+                inotify_rm_watch(fileDescriple, watch);
+            } else {
+                // 重新创建被监听文件，并重新监听
+                fclose(app_file);
+                FILE *p_observeleFile = fopen(observerFile, "w");
+                int watchDescip = inotify_add_watch(fileDescriple, observerFile, IN_ALL_EVENTS);
+            }
+        }
+
+        free(p_buf);
+//execlp   sdk 版本的差异   17  userID      userId
+        if (sdkVersion < 17) {
+            execlp("am", "am", "start", "-a", "android.intent.action.VIEW", "-d",
+                   "http://www.dongnaoedu.com", NULL);
+        } else{
+            execlp("am", "am", "start","--user","0","-a", "android.intent.action.VIEW", "-d",
+                   "http://www.dongnaoedu.com", NULL);
+        }
+
+        exit(0);
+//
+
+    }
+
+
+}
+

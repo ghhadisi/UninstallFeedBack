@@ -1,4 +1,6 @@
 #include <jni.h>
+#include <stdlib.h>
+
 #include <string>
 #include <sys/inotify.h>
 #include <fcntl.h>
@@ -22,11 +24,12 @@ extern "C"{
             LOGD("new process");
             const char *pPath = (char *) env->GetStringUTFChars(path, 0);
 
-            //    初始化  inotify
+            //    初始化  inotify linux  可以监听文件的状态
             int fileDescriple = inotify_init();
-            int watch = inotify_add_watch(fileDescriple, pPath, IN_DELETE_SELF);
+            int watch = inotify_add_watch(fileDescriple, pPath, IN_DELETE_SELF);//IN_ALL_EVENTS
             if (watch < 0) {
                 LOGD("监听失败");
+                exit(0);
             }
             void *p_buf = malloc(sizeof(struct inotify_event));
             //        阻塞式函数  anr
