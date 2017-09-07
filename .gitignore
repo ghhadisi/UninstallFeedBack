@@ -57,17 +57,10 @@ freeline_project_description.json
 .idea/copyright/
 .idea/markdown-navigator/
 .idea/misc.xml
-.idea/modules.xml
 .idea/runConfigurations.xml
-app/.gitignore
-app/build.gradle
-app/libs/
-app/src/main/cpp/
-app/src/main/res/drawable/
-build.gradle
-gradle.properties
+
+
+
+
 gradle/
-gradlew
-gradlew.bat
-settings.gradle
 
