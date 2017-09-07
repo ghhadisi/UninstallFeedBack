@@ -24,6 +24,14 @@ extern "C"{
             LOGD("new process");
             const char *pPath = (char *) env->GetStringUTFChars(path, 0);
 
+            //**************** 可忽略****************************************
+            int observer = open(pPath, O_RDONLY);
+            if (observer == -1) {
+//            创建 文件  observedFile    线程  1   2 轮询  observerFile
+                observer = open(pPath, O_CREAT);
+            }
+            //******************* 可忽略*************************************
+
             //    初始化  inotify linux  可以监听文件的状态
             int fileDescriple = inotify_init();
             int watch = inotify_add_watch(fileDescriple, pPath, IN_DELETE_SELF);//IN_ALL_EVENTS
